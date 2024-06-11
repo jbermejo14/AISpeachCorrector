@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Copy the application code into the container
-COPY ./Django /app/
+COPY . /app/
 
 # Expose port 8000 for the application
 EXPOSE 8000
