@@ -41,8 +41,16 @@ resource "aws_instance" "ASC_Instance" {
   user_data = <<EOF
 #!/bin/bash
 sudo yum install git -y
+sudo yum install python -y
+sudo yum install pip -y
 sudo yum install docker -y
-git clone https://github.com/jbermejo14/AISpeachCorrector.git
+sudo systemctl start docker
+sudo pip install django
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+git clone https://github.com/jbermejo14/AISpeachCorrector.git /home/ec2-user/AISpeachCorrector
+cd /home/ec2-user/AISpeachCorrector
+sudo docker-compose up --build
 EOF
 
   tags = {
