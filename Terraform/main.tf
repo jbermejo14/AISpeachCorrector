@@ -1,3 +1,4 @@
+
 resource "aws_vpc" "my_vpc" {
   cidr_block           = "10.123.0.0/16"
   enable_dns_hostnames = true
@@ -56,18 +57,23 @@ resource "aws_security_group" "my_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] #change to my IP
+
+resource "aws_security_group" "ASC_SG" {
+  name = "ASG_SG"
+  description = "Security Group inbounds traffic to Docker container and SSH"
+  vpc_id = "vpc-017f8b31653169d1f"
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
   }
 
   ingress {
     from_port   = 8000
     to_port     = 8000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] #change to my IP
-  }
-
-  ingress {
-    from_port   = 5432
-    to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
