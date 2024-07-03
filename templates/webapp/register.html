@@ -1,10 +1,48 @@
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Bootstrap background color */
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            border: 1px solid #dee2e6; /* Bootstrap border color */
+            border-radius: 8px;
+            background-color: #fff; /* Bootstrap card background color */
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #007bff; /* Bootstrap primary color */
+        }
+    </style>
 </head>
+
 <body>
+
+<div class="container">
+    <h1 class="text-center">Register</h1>
+
+    <form method="post" action="">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary btn-block" type="submit">Register</button>
+    </form>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 </body>
 </html>
+{% endblock content %}
