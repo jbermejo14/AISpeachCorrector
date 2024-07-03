@@ -1,3 +1,63 @@
+
+resource "aws_vpc" "my_vpc" {
+  cidr_block           = "10.123.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "dev"
+  }
+}
+
+resource "aws_subnet" "my_public_subnet" {
+  vpc_id                  = aws_vpc.my_vpc.id
+  cidr_block              = "10.123.1.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-1a"
+
+  tags = {
+    Name = "dev-public"
+  }
+}
+
+resource "aws_internet_gateway" "my_internet_gateway" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  tags = {
+    Name = "dev-igw"
+  }
+}
+
+resource "aws_route_table" "my_public_rt" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  tags = {
+    Name = "dev-public_rt"
+  }
+}
+
+resource "aws_route" "default_route" {
+  route_table_id         = aws_route_table.my_public_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.my_internet_gateway.id
+}
+
+resource "aws_route_table_association" "my_public_assoc" {
+  subnet_id      = aws_subnet.my_public_subnet.id
+  route_table_id = aws_route_table.my_public_rt.id
+}
+
+resource "aws_security_group" "my_sg" {
+  name        = "dev_sg"
+  description = "dev security group"
+  vpc_id      = aws_vpc.my_vpc.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] #change to my IP
+
 resource "aws_security_group" "ASC_SG" {
   name = "ASG_SG"
   description = "Security Group inbounds traffic to Docker container and SSH"
@@ -8,6 +68,7 @@ resource "aws_security_group" "ASC_SG" {
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+
   }
 
   ingress {
@@ -32,13 +93,19 @@ resource "aws_security_group" "ASC_SG" {
   }
 }
 
-resource "aws_instance" "ASC_Instance" {
-  ami           = "ami-08a0d1e16fc3f61ea"
-  instance_type = "t2.micro"
-  subnet_id     = "subnet-01df6f4eb4ec8187d"
-  security_groups = [aws_security_group.ASC_SG.id]
+resource "aws_key_pair" "my_auth" {
+  key_name   = "my_key_s3"
+  public_key = file("~/.ssh/my_key.pub")
+}
 
-  user_data = <<EOF
+
+resource "aws_instance" "S3_App_Instance" {
+    ami           = data.aws_ami.server_ami.id
+  instance_type   = "t2.micro"
+  subnet_id       = aws_subnet.my_public_subnet.id
+  security_groups = [aws_security_group.my_sg.id]
+  key_name               = aws_key_pair.my_auth.id
+  user_data       = <<EOF
 #!/bin/bash
 sudo yum install git -y
 sudo yum install python -y
@@ -48,13 +115,30 @@ sudo systemctl start docker
 sudo pip install django
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
-git clone https://github.com/jbermejo14/AISpeachCorrector.git /home/ec2-user/AISpeachCorrector
-cd /home/ec2-user/AISpeachCorrector
-sudo docker-compose up --build
+sudo git clone https://github.com/jbermejo14/S3_Storage_APP.git
 EOF
 
   tags = {
-    Name = "ASC_Instance"
+    Name = "S3_App_Instance"
   }
-  key_name = "ASC-keypair"
+}
+resource "aws_s3_bucket" "S3_App_bucket" {
+  bucket = "jb-storage-app-bucket"
+
+  tags = {
+    Name        = "My bucket"
+    Environment = "Dev"
+  }
+}
+
+resource "aws_db_instance" "S3_App_DB" {
+  identifier            = "s3-app-db-instance"  # Unique identifier for your RDS instance
+  allocated_storage     = 20
+  storage_type          = "gp2"
+  engine                = "postgres"
+  engine_version        = "16.3"
+  instance_class        = "db.t3.micro"
+  username              = "dbadmin"
+  password              = "password"
+  publicly_accessible   = false
 }
